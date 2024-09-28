@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'demo.dart';
 
+Ramdom ramdom = Ramdom();
+
+String description = "";
+int? price = 0;
+int? percent = 0;
+
 void main() {
   runApp(const MyApp());
 }
@@ -125,37 +131,36 @@ class _ProductListState extends State<ProductList> {
 }
 
 class ShoppingCart extends StatelessWidget{
+  const ShoppingCart({super.key});
   @override
   Widget build(BuildContext context){
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: Text("Добавление товара"),
+      ),
       body: Column(
         children: [
-          Container(
-            child: const Text("Дабавление товара",
-              style: TextStyle(
-                fontSize: 25,
-                fontWeight: FontWeight.bold,
-              ),),
-          ),
           TextField(
             decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 hintText: "Введите название товара"
             ),
             onSubmitted: (text1) {
-
+              description = text1;
             },
           ),
            Row(children: [
              Container(
+               padding: const EdgeInsets.symmetric(vertical: 0.2),
                width: MediaQuery.sizeOf(context).width/2,
                child: TextField(
                  decoration: const InputDecoration(
                      border: OutlineInputBorder(),
-                     hintText: "Введите закупочную цену товара"
+                     hintText: "Введите закупочную цену"
                  ),
                  onSubmitted: (text2) {
-
+                   price = int.parse(text2);
                  },
                ),
              ),
@@ -167,13 +172,28 @@ class ShoppingCart extends StatelessWidget{
                    hintText: "Введите наценку"
                ),
                onSubmitted: (text3) {
-
+                 percent = int.parse(text3);
                },
-             )
+                 )
              )
            ],),
         ],
-      )
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          transit();
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => MyApp()),
+          );
+        },
+        tooltip: 'Сохранить товар',
+        child: const Icon(Icons.save),
+      ),
     );
+  }
+  transit(){
+    Ramdom ramdom = Ramdom();
+    ramdom.main(description: description, price: price, percent: percent);
   }
 }
