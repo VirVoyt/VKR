@@ -105,7 +105,7 @@ class LoginScreen extends StatelessWidget {
               child: ElevatedButton(onPressed:() {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ProductList()),
+                  MaterialPageRoute(builder: (context) => OrdersScreen()),
                 );
               },
                   style: ButtonStyle(
@@ -212,16 +212,7 @@ class _ProductListState extends State<ProductList> {
           },
         ),
       ),
-    floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => ShoppingCart()),
-          );
-        },
-        tooltip: 'Добавить товар',
-        child: const Icon(Icons.add),
-      ),
+
     );
   }
 }
@@ -365,4 +356,48 @@ class CartEditor extends StatelessWidget{
     Ramdom ramdom = Ramdom();
     ramdom.main(description: description, price: price, percent: percent);
   }
+}
+
+class OrdersScreen extends StatelessWidget {
+  final List<Order> orders = [
+    Order(id: 1, product: "Ноутбук", supplier: "TechCorp", status: "В пути"),
+    Order(id: 2, product: "Монитор", supplier: "Display Ltd", status: "Доставлено"),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Заказы", style: TextStyle(color: Colors.white)), backgroundColor: color ),
+      body: ListView.builder(
+        itemCount: orders.length,
+        itemBuilder: (context, index) {
+          final order = orders[index];
+          return ListTile(
+            title: Text(order.product),
+            subtitle: Text("Поставщик: ${order.supplier}"),
+            trailing: Chip(label: Text(order.status)),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ProductList()),
+          );
+        },
+        tooltip: 'Сделать заказ',
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class Order {
+  final int id;
+  final String product;
+  final String supplier;
+  final String status;
+
+  Order({required this.id, required this.product, required this.supplier, required this.status});
 }
