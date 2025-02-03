@@ -370,13 +370,18 @@ class OrdersScreen extends StatelessWidget {
       appBar: AppBar(title: Text("Заказы", style: TextStyle(color: Colors.white)), backgroundColor: color ),
       body: ListView.builder(
         itemCount: orders.length,
+        padding: const EdgeInsets.all(5),
         itemBuilder: (context, index) {
           final order = orders[index];
-          return ListTile(
-            title: Text(order.product),
-            subtitle: Text("Поставщик: ${order.supplier}"),
-            trailing: Chip(label: Text(order.status)),
-          );
+          return Container(
+            padding: EdgeInsets.symmetric(vertical: 2.5),
+            child: Material(color: Colors.grey,
+            borderRadius: const BorderRadius.all(Radius.circular(10.0)),
+              child:ListTile(
+              title: Text(order.product),
+              subtitle: Text("Поставщик: ${order.supplier}"),
+              trailing: Chip(label: Text(order.status)),
+            ),), );
         },
       ),
       floatingActionButton: FloatingActionButton(
