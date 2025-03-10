@@ -31,16 +31,28 @@ class ApiService {
     }
   }
 
-  Future<List<dynamic>> getCompanies(String token) async {
+  Future<List<Companies>> getCompanies(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/companies'),
       headers: {'Authorization': 'Bearer $token'},
     );
 
+    print('Response status: ${response.statusCode}'); // Логируем статус ответа
+ // print('Response body: ${response.body}'); // Логируем тело ответа
+
     if (response.statusCode == 200) {
-      return json.decode(response.body);
+      final List<dynamic> jsonList = json.decode(response.body);
+
+      // Преобразуем List<dynamic> в List<Companies>
+      final List<Companies> companies = jsonList
+          .map((json) => Companies.fromJson(json))
+          .toList();
+
+      return companies; // Возвращаем List<Companies>
     } else {
       throw Exception('Failed to load companies');
     }
   }
+
 }
+

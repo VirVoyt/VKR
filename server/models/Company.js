@@ -6,7 +6,6 @@ const companySchema = new mongoose.Schema({
   contactPhone: { type: String },
   address: { type: String },
   website: { type: String },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-});
+  });
 
 module.exports = mongoose.model('Company', companySchema);

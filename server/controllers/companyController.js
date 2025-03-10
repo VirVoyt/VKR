@@ -15,9 +15,10 @@ exports.createCompany = async (req, res) => {
 // Получение всех компаний
 exports.getCompanies = async (req, res) => {
   try {
-    const companies = await Company.find({ createdBy: req.userId });
+    const companies = await Company.find({});
     res.json(companies);
   } catch (err) {
+    console.error('Error fetching companies:', err);
     res.status(400).json({ error: err.message });
   }
 };

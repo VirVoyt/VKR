@@ -23,7 +23,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/companies', companyRoutes);
 
 app.use(cors({
-  origin: 'http://localhost:61193/', //домен фронтенда
+  origin: 'http://localhost:55972/',// домен фронтенд(без надобности, но пусть будет)
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
