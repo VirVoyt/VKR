@@ -2,9 +2,9 @@ const Company = require('../models/Company');
 
 // Создание компании
 exports.createCompany = async (req, res) => {
-  const { name, contactEmail, contactPhone, address, website } = req.body;
+  const { name, contactEmail, contactPhone, address, website , description } = req.body;
   try {
-    const company = new Company({ name, contactEmail, contactPhone, address, website, createdBy: req.userId });
+    const company = new Company({ name, contactEmail, contactPhone, address, website, description });
     await company.save();
     res.status(201).json(company);
   } catch (err) {

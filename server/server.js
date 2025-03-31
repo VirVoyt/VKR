@@ -6,6 +6,7 @@ const cors = require('cors');
 
 const authRoutes = require('./routes/authRoutes');
 const companyRoutes = require('./routes/companyRoutes');
+const productRoutes = require('./routes/productRoutes');
 
 const app = express();
 
@@ -20,6 +21,7 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 
 // Роуты
 app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
 app.use('/api/companies', companyRoutes);
 
 app.use(cors({

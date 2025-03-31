@@ -1,3 +1,6 @@
+.gitignore
+/server/node_modules
+.metadata
 # Miscellaneous
 *.class
 *.log
@@ -43,6 +46,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-/server/node_modules
-.gitignore
-devtools_options.yaml
+
+
+
