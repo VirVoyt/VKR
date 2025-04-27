@@ -380,16 +380,17 @@ class _ShopPageState extends State<ShopPage> {
   late GoogleMapController mapController;
 
   // Добавление товара в корзину
-  void _addToCart(String name, double price) {
+  void _addToCart(String id, double price, String name) {
     setState(() {
-      // Проверяем, есть ли уже такой товар в корзине
-      final existingItemIndex = cartItems.indexWhere((item) => item.name == name);
+      final existingItemIndex = cartItems.indexWhere((item) => item.id == id);
       if (existingItemIndex >= 0) {
-        // Увеличиваем количество, если товар уже есть
         cartItems[existingItemIndex].quantity++;
       } else {
-        // Добавляем новый товар
-        cartItems.add(CartItem(name, price));
+        cartItems.add(CartItem(
+          id: id,
+          name: name,
+          price: price,
+        ));
       }
     });
   }
@@ -403,12 +404,12 @@ class _ShopPageState extends State<ShopPage> {
       }
     });
   }
+
   void _placeOrder() async {
     try {
       // Подготовка данных заказа
       final orderItems = cartItems.map((item) => {
-        'name': item.name,
-        'price': item.price,
+        'product': item.id,
         'quantity': item.quantity,
       }).toList();
 
@@ -417,6 +418,8 @@ class _ShopPageState extends State<ShopPage> {
         widget.token,
         orderItems,
         totalPrice,
+        shippingAddress: 'ул. Примерная, д. 123, кв. 45', // Замените на реальный адрес
+        paymentMethod: 'card', // Используйте 'card', 'cash' или 'paypal'
       );
 
       // Очистка корзины при успехе
@@ -432,13 +435,11 @@ class _ShopPageState extends State<ShopPage> {
         ),
       );
 
-      // Можно добавить переход на страницу заказов
-      // setState(() => currentPageIndex = 1);
-
     } catch (e) {
+      print('Order creation error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Ошибка оформления заказа: $e'),
+          content: Text('Ошибка оформления заказа: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -555,6 +556,11 @@ class _ShopPageState extends State<ShopPage> {
                                 token: widget.token,
                                 id: company.id,
                               name: company.name,
+                              description: company.description,
+                              address: company.address,
+                              contactPhone: company.contactPhone,
+                              contactEmail: company.contactEmail,
+                              website: company.website,
                               onAddToCart: _addToCart,
                             ),
                           ),
@@ -568,22 +574,7 @@ class _ShopPageState extends State<ShopPage> {
           },
         ),
         /// Orders page
-        ListView.builder(
-          itemCount: orders.length,
-          padding: const EdgeInsets.all(5),
-          itemBuilder: (context, index) {
-            final order = orders[index];
-            return Container(
-              padding: const EdgeInsets.symmetric(vertical: 2.5),
-              child: Material(color: Colors.grey,
-                borderRadius: const BorderRadius.all(Radius.circular(10.0)),
-                child:ListTile(
-                  title: Text(order.product),
-                  subtitle: Text("Поставщик: ${order.supplier}"),
-                  trailing: Chip(label: Text(order.status)),
-                ),), );
-          },
-        ),
+        OrdersPage(token: widget.token),
 
         /// map page
         GoogleMap(
@@ -772,11 +763,17 @@ class _ShopPageState extends State<ShopPage> {
 }
 
 class CartItem {
+  final String id;
   final String name;
   final double price;
-  int quantity; // поле количества
+  int quantity;
 
-  CartItem(this.name, this.price, [this.quantity = 1]);
+  CartItem({
+    required this.id,
+    required this.name,
+    required this.price,
+    this.quantity = 1,
+  });
 }
 
 class Product {
@@ -832,8 +829,23 @@ class CompaniesCart extends StatefulWidget {
   final String token;
   final String id;
   final String name;
-  final Function(String, double) onAddToCart;
-  const CompaniesCart({super.key, required this.token, required this.id, required this.name,required this.onAddToCart,});
+  final String description;
+  final String website;
+  final String contactEmail;
+  final String contactPhone;
+  final String address;
+  final Function(String, double, String) onAddToCart;
+  const CompaniesCart({super.key,
+    required this.token,
+    required this.id,
+    required this.name,
+    required this.onAddToCart,
+    required this.description,
+    required this.website,
+    required this.contactEmail,
+    required this.contactPhone,
+    required this.address,
+  });
 
   @override
   State<CompaniesCart> createState() => _CompaniesCartState();
@@ -841,23 +853,96 @@ class CompaniesCart extends StatefulWidget {
 
 class _CompaniesCartState extends State<CompaniesCart> {
   late Future<List<Products>> futureCart;
-  @override
 
+  @override
   void initState() {
     super.initState();
-        // Загружаем данные с использованием токена
-        futureCart = apiService.getProducts(widget.token, widget.id);
+    futureCart = apiService.getProducts(widget.token, widget.id);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          title: Text(widget.name),
-        ),
-        body:
-        FutureBuilder<List<Products>>(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          // Блок с описанием компании
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Card(
+              elevation: 1,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.business,
+                          color: Colors.deepPurple,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Информация о компании ' + widget.name,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.deepPurple,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.description + '\n'
+                          'Телефон: ' + widget.contactPhone + '\n'
+                          'Email: ' + widget.contactEmail + '\n'
+                          'Адрес: ' + widget.address + '\n'
+                          'Сайт: ' + widget.website,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Заголовок списка товаров
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.shopping_bag,
+                  color: Colors.grey[600],
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Товары компании',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Список товаров
+          Expanded(
+            child:
+            FutureBuilder<List<Products>>(
               future: futureCart,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -873,47 +958,51 @@ class _CompaniesCartState extends State<CompaniesCart> {
                     itemBuilder: (context, index) {
                       final product = products[index];
                       return Card(
-                        color: Colors.black12,
-                        margin: EdgeInsets.all(4),
-                        child: Stack( children: [
-                          ListTile(
-                            title: Text(product.name),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(product.description),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            alignment: const Alignment(0.6, 0),
-                            padding: EdgeInsets.symmetric(vertical: 22),
-                            child: Text(product.price.toString() + ' ₽'),
-                          ),
-                          Container(
-                            alignment: const Alignment(1, 0),
-                            padding: EdgeInsets.symmetric(vertical: 15, horizontal: 15),
-                            child:ElevatedButton(
-                              onPressed: () {
-                                widget.onAddToCart(product.name, product.price);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('${product.name} добавлен в корзину')),
-                                );
-                              },
-                              style: ButtonStyle(
-                                backgroundColor: WidgetStateProperty.all(color),
+                          color: Colors.black12,
+                          margin: EdgeInsets.all(4),
+                          child: Stack( children: [
+                            ListTile(
+                              title: Text(product.name),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(product.description),
+                                ],
                               ),
-                              child: const Icon(Icons.shopping_cart, color: Colors.black),
                             ),
-                          ),
-                        ])
+                            Container(
+                              alignment: const Alignment(0.6, 0),
+                              padding: EdgeInsets.symmetric(vertical: 22),
+                              child: Text(product.price.toString() + ' ₽'),
+                            ),
+                            Container(
+                              alignment: const Alignment(1, 0),
+                              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+                              child:ElevatedButton(
+                                onPressed: () {
+                                  widget.onAddToCart(product.id, product.price, product.name); // Передаем id продукта
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('${product.name} добавлен в корзину')),
+                                  );
+                                },
+                                style: ButtonStyle(
+                                  backgroundColor: WidgetStateProperty.all(color),
+                                ),
+                                child: const Icon(Icons.shopping_cart, color: Colors.black),
+                              ),
+                            ),
+                          ])
                       );
                     },
                   );
                 }
               },
             ),
-    );}
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class Products {
@@ -931,16 +1020,15 @@ class Products {
     required this.itemsPerBox,
     required this.company,
     required this.description,
-
   });
 
   factory Products.fromJson(Map<String, dynamic> json) {
     return Products(
-      id: json['_id'],
+      id: json['_id'].toString(), // Явное преобразование в строку
       name: json['name'],
-      price: json['price'],
-      itemsPerBox: json['itemsPerBox'],
-      company: json['company'],
+      price: json['price'].toDouble(),
+      itemsPerBox: json['itemsPerBox'].toDouble(),
+      company: json['company'].toString(),
       description: json['description'],
     );
   }

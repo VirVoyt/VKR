@@ -38,7 +38,6 @@ class ApiService {
     );
 
     print('Response status: ${response.statusCode}'); // Логируем статус ответа
- // print('Response body: ${response.body}'); // Логируем тело ответа
 
     if (response.statusCode == 200) {
       final List<dynamic> jsonList = json.decode(response.body);
@@ -87,25 +86,74 @@ class ApiService {
   Future<Map<String, dynamic>> createOrder(
       String token,
       List<Map<String, dynamic>> items,
-      double total,
-      ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/orders'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: json.encode({
+      double total, {
+        required String shippingAddress,
+        required String paymentMethod,
+      }) async {
+    try {
+      print('Creating order with data:');
+      print('Items: $items');
+      print('Total: $total');
+      print('Shipping: $shippingAddress');
+      print('Payment: $paymentMethod');
+
+      final orderData = {
         'items': items,
         'total': total,
-        'date': DateTime.now().toIso8601String(),
-      }),
-    );
+        'shippingAddress': shippingAddress,
+        'paymentMethod': paymentMethod,
+      };
 
-    if (response.statusCode == 201) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to create order: ${response.statusCode}');
+      final response = await http.post(
+        Uri.parse('$baseUrl/orders'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode(orderData),
+      );
+
+      print('Order creation response: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 201) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        final errorResponse = json.decode(response.body);
+        throw Exception(
+            errorResponse['message'] ??
+                'Failed to create order. Status: ${response.statusCode}'
+        );
+      }
+    } catch (e) {
+      print('Order creation error: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Order>> fetchOrders(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/orders'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final dynamic responseData = json.decode(response.body);
+
+        print('Orders response: ${response.body}'); // Логируем ответ
+
+        if (responseData is List) {
+          return responseData.map((json) => Order.fromJson(json)).toList();
+        } else {
+          return [Order.fromJson(responseData)];
+        }
+      } else {
+        throw Exception('Failed to load orders. Status: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching orders: $e');
+      throw Exception('Failed to load orders: $e');
     }
   }
 }
