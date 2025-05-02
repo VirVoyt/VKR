@@ -1,27 +1,37 @@
 import 'package:flutter/material.dart';
 import 'demo.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
 
 late Future<List<Companies>> futureCompanies;
 
 
 final ApiService apiService = ApiService();
 
-String description = "";
-int? price = 0;
-int? percent = 0;
-const color = Colors.deepPurple;
 void main() async {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeNotifier(),
+      child: const MyApp(),
+    ),
+  );
 }
-
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget{
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+
+  @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+
     return MaterialApp(
       title: 'Product List',
+      theme: themeNotifier.currentTheme,
       initialRoute: '/',
       onGenerateRoute: (settings) {
         switch (settings.name) {
@@ -38,330 +48,11 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(builder: (context) => LoginScreen());
         }
       },
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: color),
-        useMaterial3: true,
-      ),
     );
   }
 }
 
-//страница с входа
-class LoginScreen extends StatelessWidget {
-   LoginScreen({super.key});
 
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-
-   final FocusNode _emailFocusNode = FocusNode();
-   final FocusNode _passwordFocusNode = FocusNode();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        alignment: Alignment.center,
-        child:
-            Stack( children: [
-              Align(alignment: const Alignment(0, 0),
-                child:
-        Column(
-          crossAxisAlignment:CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            //текст вход
-            const Text("Вход",
-                textDirection: TextDirection.ltr,
-                style: TextStyle(
-                    fontSize: 40,
-                    decorationStyle: TextDecorationStyle.double,
-                  color: color
-                )
-            ),
-            //первое поле ввода
-            Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical:25),
-              width: MediaQuery
-                  .sizeOf(context)
-                  .width / 2,
-              child: TextField(
-                controller: _emailController,
-                focusNode: _emailFocusNode,
-                decoration: const InputDecoration(
-                  hintText: "Введите email",
-                  hintStyle: TextStyle(
-                    color: Colors.grey,
-                  ),
-                ),
-              ),
-            ),
-            //второе поле ввода
-            Container(
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(vertical: 45),
-                width: MediaQuery.sizeOf(context).width / 2,
-                child: TextField(
-                  controller: _passwordController,
-                  focusNode: _passwordFocusNode, // Привязываем FocusNode
-                  decoration: const InputDecoration(
-                    hintText: "Введите пароль",
-                    hintStyle: TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                )
-            ),
-            SizedBox(
-              height: 50,
-              width: MediaQuery.sizeOf(context).width / 2,
-              //действия кнопки авторизации
-              child: ElevatedButton(onPressed:  ()
-
-              async {
-                String email = _emailController.text;
-                String password = _passwordController.text;
-
-                _emailFocusNode.unfocus();
-                _passwordFocusNode.unfocus();
-
-                // Проверка данных
-                if (email.isEmpty || password.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Пожалуйста, заполните все поля')),
-                  );
-                  return;
-                }
-
-                try {
-                  // Авторизация пользователя
-                  final token = await apiService.login(email, password);
-                  print('User logged in');
-                  final token1 = token['token'];
-                  // Получение списка компаний
-                //  final futureCompanies = await apiService.getCompanies(token1);
-                  //print('Companies: $futureCompanies');
-
-                  // Переход на второй экран
-                  Navigator.pushNamed(
-                    context,
-                    '/app',
-                    arguments: token1, // Передаем токен
-                  );
-
-                  // Очистка TextField
-                  _emailController.clear();
-                  _passwordController.clear();
-                } catch (e) {
-                  print('Error: $e');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
-                }
-              },
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.all(color),
-                  ),
-                  child: const Text("АВТОРИЗОВАТЬСЯ", style: TextStyle(fontSize: 15,color: Colors.white))
-              )
-            ),
-          ],
-        ),),
-              Align(alignment: const Alignment(0, 1),
-                  child: ElevatedButton(
-                onPressed: (){
-                  Navigator.pushNamed(context, '/register');
-                },
-                style: ElevatedButton.styleFrom(
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                  textStyle: const TextStyle(fontSize: 15),
-                ),
-                child: const Text('Зарегистрироваться'),
-              ),)
-      ])
-    ));
-  }
-   //очищение фокуса и контроллеров
-   void dispose() {
-     _emailFocusNode.dispose();
-     _passwordFocusNode.dispose();
-     _emailController.dispose();
-     _passwordController.dispose(); // Очищаем контроллер
-     dispose();
-   }
-}
-
-class RegisterScreen extends StatelessWidget {
-  RegisterScreen({super.key});
-
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-
-  final FocusNode _usernameFocusNode = FocusNode();
-  final FocusNode _emailFocusNode = FocusNode();
-  final FocusNode _passwordFocusNode = FocusNode();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        backgroundColor: Colors.white,
-        body: Container(
-            alignment: Alignment.center,
-            child:
-            Stack( children: [
-              Align(alignment: const Alignment(0, 0),
-                child:
-                Column(
-                  crossAxisAlignment:CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    //текст вход
-                    const Text("Регистрация",
-                        textDirection: TextDirection.ltr,
-                        style: TextStyle(
-                            fontSize: 40,
-                            decorationStyle: TextDecorationStyle.double,
-                            color: color
-                        )
-                    ),
-                    Container(
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.symmetric(vertical:25),
-                      width: MediaQuery
-                          .sizeOf(context)
-                          .width / 2,
-                      child: TextField(
-                        controller: _usernameController,
-                        focusNode: _usernameFocusNode,
-                        decoration: const InputDecoration(
-                          hintText: "Введите Имя пользователя",
-                          hintStyle: TextStyle(
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ),
-                    //первое поле ввода
-                    Container(
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.symmetric(vertical:25),
-                      width: MediaQuery
-                          .sizeOf(context)
-                          .width / 2,
-                      child: TextField(
-                        controller: _emailController,
-                        focusNode: _emailFocusNode,
-                        decoration: const InputDecoration(
-                          hintText: "Введите email",
-                          hintStyle: TextStyle(
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ),
-                    //второе поле ввода
-                    Container(
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.symmetric(vertical: 45),
-                        width: MediaQuery.sizeOf(context).width / 2,
-                        child: TextField(
-                          controller: _passwordController,
-                          focusNode: _passwordFocusNode, // Привязываем FocusNode
-                          decoration: const InputDecoration(
-                            hintText: "Введите пароль",
-                            hintStyle: TextStyle(
-                              color: Colors.grey,
-                            ),
-                          ),
-                        )
-                    ),
-                    SizedBox(
-                        height: 50,
-                        width: MediaQuery.sizeOf(context).width / 2,
-                        //действия кнопки авторизации
-                        child: ElevatedButton(onPressed:  () async {
-
-                          String username = _usernameController.text;
-                          String email = _emailController.text;
-                          String password = _passwordController.text;
-
-                          _emailFocusNode.unfocus();
-                          _passwordFocusNode.unfocus();
-                          // Проверка данных
-                          if (email.isEmpty || password.isEmpty ||username.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Пожалуйста, заполните все поля')),
-                            );
-                            return;
-                          }
-
-                          try {
-                            // Авторизация пользователя
-                            await apiService.register(username, email, password);
-                            print('User registered');
-
-                            // уведомление о регистрации
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Пользователь зарегистрирован')),
-                            );
-
-                            // Очистка TextField
-                            _usernameController.clear();
-                            _emailController.clear();
-                            _passwordController.clear();
-                          } catch (e) {
-                            print('Error: $e');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: $e')),
-                            );
-                          }
-                        },
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(color),
-                            ),
-                            child: const Text("ЗАРЕГИСТРИРОВАТЬСЯ", style: TextStyle(fontSize: 15,color: Colors.white))
-                        )
-                    ),
-                  ],
-                ),),
-              Align(alignment: const Alignment(0, 1),
-                child: ElevatedButton(
-                  onPressed: (){
-                    Navigator.pushNamed(context,'/');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                    textStyle: const TextStyle(fontSize: 18),
-                  ),
-                  child: const Text('Войти'),
-                ),)
-            ])
-        ));
-  }
-  //очищение фокуса и контроллеров
-  void dispose() {
-    _usernameFocusNode.dispose();
-    _emailFocusNode.dispose();
-    _passwordFocusNode.dispose();
-    _usernameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose(); // Очищаем контроллер
-    dispose();
-  }
-}
-
-class Order {
-  final int id;
-  final String product;
-  final String supplier;
-  final String status;
-
-  Order({required this.id, required this.product, required this.supplier, required this.status});
-}
 
 class ShopPage extends StatefulWidget {
   final String token;//принимаем токен
@@ -378,6 +69,9 @@ class _ShopPageState extends State<ShopPage> {
   int currentPageIndex = 0;
 
   late GoogleMapController mapController;
+
+  TextEditingController _addressController = TextEditingController();
+  String _selectedPaymentMethod = 'card';
 
   // Добавление товара в корзину
   void _addToCart(String id, double price, String name) {
@@ -406,114 +100,130 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   void _placeOrder() async {
+    if (_addressController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Пожалуйста, введите адрес доставки',
+          style: TextStyle(color: Theme.of(context).colorScheme.onSecondary),),
+          backgroundColor: Theme.of(context).colorScheme.primary,),
+      );
+      return;
+    }
+
     try {
-      // Подготовка данных заказа
       final orderItems = cartItems.map((item) => {
         'product': item.id,
         'quantity': item.quantity,
       }).toList();
 
-      // Отправка на сервер
-      final response = await apiService.createOrder(
+      await apiService.createOrder(
         widget.token,
         orderItems,
         totalPrice,
-        shippingAddress: 'ул. Примерная, д. 123, кв. 45', // Замените на реальный адрес
-        paymentMethod: 'card', // Используйте 'card', 'cash' или 'paypal'
+        shippingAddress: _addressController.text,
+        paymentMethod: _selectedPaymentMethod,
       );
 
-      // Очистка корзины при успехе
       setState(() {
         cartItems.clear();
+        _addressController.clear();
       });
 
-      // Уведомление пользователя
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Заказ успешно оформлен!'),
+         SnackBar(
+          content: Text('Заказ успешно оформлен!', style: TextStyle(color: Theme.of(context).colorScheme.secondary),),
           backgroundColor: Colors.green,
         ),
       );
-
     } catch (e) {
-      print('Order creation error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Ошибка оформления заказа: ${e.toString()}'),
+          content: Text('Ошибка оформления заказа: ${e.toString()}', style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
           backgroundColor: Colors.red,
         ),
       );
     }
   }
 
-  final UserProfile user = UserProfile(
-    name: 'Имя Фамилия',
-    email: 'email@example.com',
-    image: 'https://steamuserimages-a.akamaihd.net/ugc/2012598700616315267/BCD2C0C2846E4477E8E8340A4ED4EF095BD2655B/?imw=512&amp;imh=512&amp;ima=fit&amp;impolicy=Letterbox&amp;imcolor=%23000000&amp;letterbox=true',
-  );
-  final List<Product> products = [
-    Product(name: 'Товар 1', image: 'https://steamuserimages-a.akamaihd.net/ugc/2012598700616315267/BCD2C0C2846E4477E8E8340A4ED4EF095BD2655B/?imw=512&amp;imh=512&amp;ima=fit&amp;impolicy=Letterbox&amp;imcolor=%23000000&amp;letterbox=true', price: 29.99),
-    Product(name: 'Товар 2', image: 'https://steamuserimages-a.akamaihd.net/ugc/2012598700616315267/BCD2C0C2846E4477E8E8340A4ED4EF095BD2655B/?imw=512&amp;imh=512&amp;ima=fit&amp;impolicy=Letterbox&amp;imcolor=%23000000&amp;letterbox=true', price: 49.99),
-    Product(name: 'Товар 3', image: "https://steamuserimages-a.akamaihd.net/ugc/2012598700616315267/BCD2C0C2846E4477E8E8340A4ED4EF095BD2655B/?imw=512&amp;imh=512&amp;ima=fit&amp;impolicy=Letterbox&amp;imcolor=%23000000&amp;letterbox=true", price: 19.99),
-  ];
-
-  final List<Order> orders = [
-    Order(id: 1, product: "Ноутбук", supplier: "TechCorp", status: "В пути"),
-    Order(id: 2, product: "Монитор", supplier: "Display Ltd", status: "Доставлено"),
-  ];
-
   double get totalPrice {
     return cartItems.fold(0, (sum, item) => sum + (item.price * item.quantity));
   }
 
+  void _logout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Выход из аккаунта'),
+        content: const Text('Вы уверены, что хотите выйти?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/',
+                    (route) => false,
+              );
+            },
+            child: const Text('Выйти'),
+          ),
+        ],
+      ),
+    );
+  }
   @override
   void initState() {
     super.initState();
     // Загружаем данные с использованием токена
     futureCompanies = apiService.getCompanies(widget.token);
   }
-
+  @override
+  void dispose() {
+    _addressController.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       bottomNavigationBar: NavigationBar(
+
+        backgroundColor: Theme.of(context).colorScheme.surface, // цвет навигатора
+        indicatorColor: Theme.of(context).colorScheme.tertiary, // цвет выбранного элемента
         onDestinationSelected: (int index) {
           setState(() {
             currentPageIndex = index;
           });
         },
-        backgroundColor: Colors.black38,
-        indicatorColor: color,
         selectedIndex: currentPageIndex,
-        destinations: const <Widget>[
+        destinations: <Widget>[
           NavigationDestination(
-            selectedIcon: Icon(Icons.home),
-            icon: Icon(Icons.home_outlined),
-            label: 'Главная',
+            selectedIcon: Icon(Icons.home, color: Theme.of(context).colorScheme.secondary),
+            icon: Icon(Icons.home_outlined, color: Theme.of(context).colorScheme.secondary),
+            label: '',
           ),
           NavigationDestination(
-            icon: Icon(Icons.delivery_dining_rounded),
-            label: 'Заказы',
+            icon: Icon(Icons.delivery_dining_rounded, color: Theme.of(context).colorScheme.secondary),
+            label: '',
           ),
           NavigationDestination(
-            icon: Badge(child: Icon(Icons.location_on)),
-            label: 'Отслеживание',
-          ),
-          NavigationDestination(
-            icon: Badge(
-              label: Text('2'),
-              child: Icon(Icons.shopping_cart),
-            ),
-            label: 'Корзина',
+            icon: Icon(Icons.location_on, color: Theme.of(context).colorScheme.secondary),
+            label: '',
           ),
           NavigationDestination(
             icon: Badge(
-              label: Text(''),
-              child: Icon(Icons.account_circle),
+              label: Text(cartItems.length.toString()),
+              child: Icon(Icons.shopping_cart, color: Theme.of(context).colorScheme.secondary),
             ),
-            label: 'Аккаунт',
+            label: '',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_circle, color: Theme.of(context).colorScheme.secondary),
+            label: '',
           ),
         ],
       ),
@@ -536,17 +246,23 @@ class _ShopPageState extends State<ShopPage> {
                 itemBuilder: (context, index) {
                   final company = companies[index];
                   return Card(
-                    color: Colors.black12,
+                    color: Theme.of(context).colorScheme.onPrimary,
                     margin: EdgeInsets.all(4),
                     child: ListTile(
-                      title: Text(company.name),
+                      title: Text(company.name,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.secondary
+                        ),),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(company.description),
+                          Text(company.description,
+                              style: TextStyle(
+                                  color: Theme.of(context).colorScheme.secondary
+                              )),
                         ],
                       ),
-                      trailing: Icon(Icons.arrow_forward),
+                      trailing: Icon(Icons.arrow_forward, color: Theme.of(context).colorScheme.secondary,),
                       onTap: () {
                         // Действие при нажатии на компанию
                         Navigator.push(
@@ -599,7 +315,7 @@ class _ShopPageState extends State<ShopPage> {
                 itemBuilder: (context, index) {
                   final item = cartItems[index];
                   return Card(
-                    color: Colors.grey,
+                    color: Theme.of(context).colorScheme.onPrimary,
                     margin: const EdgeInsets.only(bottom: 12),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
@@ -612,9 +328,10 @@ class _ShopPageState extends State<ShopPage> {
                               children: [
                                 Text(
                                   item.name,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.secondary
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -622,7 +339,7 @@ class _ShopPageState extends State<ShopPage> {
                                   '${item.price.toStringAsFixed(2)} ₽',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.black,
+                                    color: Theme.of(context).colorScheme.secondary,
                                   ),
                                 ),
                               ],
@@ -632,24 +349,27 @@ class _ShopPageState extends State<ShopPage> {
                           Row(
                             children: [
                               IconButton(
-                                icon: item.quantity > 1 ? Icon(Icons.remove) :  Icon(Icons.delete),
+                                icon: item.quantity > 1
+                                    ? Icon(Icons.remove, color: Theme.of(context).colorScheme.secondary)
+                                    : Icon(Icons.delete, color: Theme.of(context).colorScheme.secondary,),
                                 onPressed: () => _updateQuantity(index, item.quantity - 1),
                                 style: IconButton.styleFrom(
-                                  backgroundColor: Colors.grey,
+
                                 ),
                               ),
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 8),
                                 child: Text(
                                   '${item.quantity}',
-                                  style: const TextStyle(fontSize: 16),
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      color: Theme.of(context).colorScheme.secondary),
                                 ),
                               ),
                               IconButton(
-                                icon:  const Icon(Icons.add),
+                                icon:  Icon(Icons.add, color: Theme.of(context).colorScheme.secondary),
                                 onPressed: () => _updateQuantity(index, item.quantity + 1),
                                 style: IconButton.styleFrom(
-                                  backgroundColor: Colors.grey,
                                 ),
                               ),
                             ],
@@ -657,9 +377,10 @@ class _ShopPageState extends State<ShopPage> {
                           // Сумма по позиции
                           Text(
                             '${(item.price * item.quantity).toStringAsFixed(2)} ₽',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.secondary
                             ),
                           ),
                         ],
@@ -672,7 +393,7 @@ class _ShopPageState extends State<ShopPage> {
             // Блок с итогами и кнопкой оформления
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.primary,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.2),
@@ -685,11 +406,54 @@ class _ShopPageState extends State<ShopPage> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  // Поле для ввода адреса
+                  TextField(
+                    controller: _addressController,
+                    decoration: InputDecoration(
+                      labelText: 'Адрес доставки',
+                      labelStyle: TextStyle(
+                        color: Theme.of(context).colorScheme.onSecondary,
+                      ),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Выбор способа оплаты
+                  DropdownButtonFormField<String>(
+                    value: _selectedPaymentMethod,
+                    decoration: InputDecoration(
+                      labelText: 'Способ оплаты',
+                      labelStyle: TextStyle(
+                        color: Theme.of(context).colorScheme.onSecondary,
+                      ),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'card',
+                        child: Text('Карта'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'cash',
+                        child: Text('Наличные'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'SberPay',
+                        child: Text('SberPay'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedPaymentMethod = value!;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
                   // Итоговая строка
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Итого:',
                         style: TextStyle(
                           fontSize: 18,
@@ -698,10 +462,9 @@ class _ShopPageState extends State<ShopPage> {
                       ),
                       Text(
                         '${totalPrice.toStringAsFixed(2)} ₽',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.deepPurple,
                         ),
                       ),
                     ],
@@ -714,22 +477,21 @@ class _ShopPageState extends State<ShopPage> {
                       onPressed: cartItems.isEmpty
                           ? null
                           : () {
-                        // Оформление заказа
                         _placeOrder();
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor: Theme.of(context).colorScheme.tertiary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Оформить заказ',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                     ),
@@ -739,21 +501,71 @@ class _ShopPageState extends State<ShopPage> {
             ),
           ],
         ),
-
         /// account page
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                backgroundImage: NetworkImage(user.image),
-                radius: 50,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Профиль', style: TextStyle(fontSize: 24)),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.brightness_6),
+                        onPressed: () {
+                          final themeNotifier = Provider.of<ThemeNotifier>(context, listen: false);
+                          themeNotifier.toggleTheme();
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.logout),
+                        onPressed: () => _logout(context),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              Text('Имя: ${user.name}', style: const TextStyle(fontSize: 20)),
-              const SizedBox(height: 8),
-              Text('Email: ${user.email}', style: const TextStyle(fontSize: 16)),
+              const SizedBox(height: 20),
+              FutureBuilder<Map<String, dynamic>>(
+                future: apiService.getUserInfo(widget.token),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Ошибка: ${snapshot.error}'));
+                  } else if (!snapshot.hasData) {
+                    return const Center(child: Text('Нет данных о пользователе'));
+                  } else {
+                    final userData = snapshot.data!;
+                    return Column(
+                      children: [
+                        CircleAvatar(
+                      backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                          child: Text(
+                            userData['username']?.toString().isNotEmpty == true
+                                ? userData['username'][0].toUpperCase()
+                                : 'U',
+                            style: TextStyle(fontSize: 24, color: Theme.of(context).colorScheme.secondary),
+                          ),
+                          radius: 40,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Имя: ${userData['username'] ?? 'Не указано'}',
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Email: ${userData['email'] ?? 'Не указан'}',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ],
+                    );
+                  }
+                },
+              ),
             ],
           ),
         ),
@@ -762,274 +574,3 @@ class _ShopPageState extends State<ShopPage> {
   }
 }
 
-class CartItem {
-  final String id;
-  final String name;
-  final double price;
-  int quantity;
-
-  CartItem({
-    required this.id,
-    required this.name,
-    required this.price,
-    this.quantity = 1,
-  });
-}
-
-class Product {
-  final String name;
-  final String image;
-  final double price;
-
-  Product({required this.name, required this.image, required this.price});
-}
-
-class UserProfile {
-  final String name;
-  final String email;
-  final String image;
-
-  UserProfile({required this.name, required this.email, required this.image});
-}
-
-class Companies {
-  final String id;
-  final String name;
-  final String contactEmail;
-  final String contactPhone;
-  final String address;
-  final String website;
-  final String description;
-
-  Companies({
-    required this.id,
-    required this.name,
-    required this.contactEmail,
-    required this.contactPhone,
-    required this.address,
-    required this.website,
-    required this.description,
-
-  });
-
-  factory Companies.fromJson(Map<String, dynamic> json) {
-    return Companies(
-      id: json['_id'],
-      name: json['name'],
-      contactEmail: json['contactEmail'],
-      contactPhone: json['contactPhone'],
-      address: json['address'],
-      website: json['website'],
-      description: json['description'],
-    );
-  }
-}
-
-class CompaniesCart extends StatefulWidget {
-  final String token;
-  final String id;
-  final String name;
-  final String description;
-  final String website;
-  final String contactEmail;
-  final String contactPhone;
-  final String address;
-  final Function(String, double, String) onAddToCart;
-  const CompaniesCart({super.key,
-    required this.token,
-    required this.id,
-    required this.name,
-    required this.onAddToCart,
-    required this.description,
-    required this.website,
-    required this.contactEmail,
-    required this.contactPhone,
-    required this.address,
-  });
-
-  @override
-  State<CompaniesCart> createState() => _CompaniesCartState();
-}
-
-class _CompaniesCartState extends State<CompaniesCart> {
-  late Future<List<Products>> futureCart;
-
-  @override
-  void initState() {
-    super.initState();
-    futureCart = apiService.getProducts(widget.token, widget.id);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          // Блок с описанием компании
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Card(
-              elevation: 1,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.business,
-                          color: Colors.deepPurple,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Информация о компании ' + widget.name,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.deepPurple,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.description + '\n'
-                          'Телефон: ' + widget.contactPhone + '\n'
-                          'Email: ' + widget.contactEmail + '\n'
-                          'Адрес: ' + widget.address + '\n'
-                          'Сайт: ' + widget.website,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Заголовок списка товаров
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.shopping_bag,
-                  color: Colors.grey[600],
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Товары компании',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey[800],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Список товаров
-          Expanded(
-            child:
-            FutureBuilder<List<Products>>(
-              future: futureCart,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Ошибка: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('Нет данных о товарах'));
-                } else {
-                  final products = snapshot.data!;
-                  return ListView.builder(
-                    itemCount: products.length,
-                    itemBuilder: (context, index) {
-                      final product = products[index];
-                      return Card(
-                          color: Colors.black12,
-                          margin: EdgeInsets.all(4),
-                          child: Stack( children: [
-                            ListTile(
-                              title: Text(product.name),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(product.description),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              alignment: const Alignment(0.6, 0),
-                              padding: EdgeInsets.symmetric(vertical: 22),
-                              child: Text(product.price.toString() + ' ₽'),
-                            ),
-                            Container(
-                              alignment: const Alignment(1, 0),
-                              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 15),
-                              child:ElevatedButton(
-                                onPressed: () {
-                                  widget.onAddToCart(product.id, product.price, product.name); // Передаем id продукта
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('${product.name} добавлен в корзину')),
-                                  );
-                                },
-                                style: ButtonStyle(
-                                  backgroundColor: WidgetStateProperty.all(color),
-                                ),
-                                child: const Icon(Icons.shopping_cart, color: Colors.black),
-                              ),
-                            ),
-                          ])
-                      );
-                    },
-                  );
-                }
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class Products {
-  final String id;
-  final String name;
-  final double price;
-  final double itemsPerBox;
-  final String company;
-  final String description;
-
-  Products({
-    required this.id,
-    required this.name,
-    required this.price,
-    required this.itemsPerBox,
-    required this.company,
-    required this.description,
-  });
-
-  factory Products.fromJson(Map<String, dynamic> json) {
-    return Products(
-      id: json['_id'].toString(), // Явное преобразование в строку
-      name: json['name'],
-      price: json['price'].toDouble(),
-      itemsPerBox: json['itemsPerBox'].toDouble(),
-      company: json['company'].toString(),
-      description: json['description'],
-    );
-  }
-}

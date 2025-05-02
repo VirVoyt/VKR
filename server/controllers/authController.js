@@ -14,6 +14,19 @@ exports.register = async (req, res) => {
   }
 };
 
+exports.me = async (req, res) => {
+  try {
+    // Исправляем поиск пользователя - используем req.user._id напрямую
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // Авторизация
 exports.login = async (req, res) => {
   const { email, password } = req.body;

@@ -31,6 +31,24 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getUserInfo(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/me'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to load user info');
+      }
+    } catch (e) {
+      print('Error fetching user info: $e');
+      throw Exception('Failed to load user info: $e');
+    }
+  }
+
   Future<List<Companies>> getCompanies(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/companies'),
@@ -91,11 +109,11 @@ class ApiService {
         required String paymentMethod,
       }) async {
     try {
-      print('Creating order with data:');
+     /* print('Creating order with data:');
       print('Items: $items');
       print('Total: $total');
       print('Shipping: $shippingAddress');
-      print('Payment: $paymentMethod');
+      print('Payment: $paymentMethod');*/
 
       final orderData = {
         'items': items,
@@ -139,14 +157,14 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final dynamic responseData = json.decode(response.body);
+        final Map<String, dynamic> responseData = json.decode(response.body);
 
-        print('Orders response: ${response.body}'); // Логируем ответ
-
-        if (responseData is List) {
-          return responseData.map((json) => Order.fromJson(json)).toList();
+        // Проверяем успешность запроса и наличие данных
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final List<dynamic> ordersData = responseData['data'];
+          return ordersData.map((json) => Order.fromJson(json)).toList();
         } else {
-          return [Order.fromJson(responseData)];
+          throw Exception('No orders data received');
         }
       } else {
         throw Exception('Failed to load orders. Status: ${response.statusCode}');

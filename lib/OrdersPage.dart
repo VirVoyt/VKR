@@ -22,6 +22,7 @@ class _OrdersPageState extends State<OrdersPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.primary,
       body: FutureBuilder<List<Order>>(
         future: futureOrders,
         builder: (context, snapshot) {
@@ -62,6 +63,7 @@ class _OrderCardState extends State<OrderCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Theme.of(context).colorScheme.onPrimary,
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -85,17 +87,25 @@ class _OrderCardState extends State<OrderCard> {
                 children: [
                   Text(
                     'Заказ №${widget.order.id.length > 8 ? widget.order.id.substring(0, 8) : widget.order.id}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.secondary
                     ),
                   ),
-                  Chip(
-                    label: Text(
-                      _getStatusText(widget.order.status),
-                      style: const TextStyle(color: Colors.white),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(widget.order.status),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    backgroundColor: _getStatusColor(widget.order.status),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    child: Text(
+                      _getStatusText(widget.order.status),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -104,28 +114,30 @@ class _OrderCardState extends State<OrderCard> {
                 'Продуктов: ${widget.order.items.length}',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Сумма: ${widget.order.total.toStringAsFixed(2)} ₽',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.secondary
                 ),
               ),
 
               // Детали заказа (раскрываются по нажатию)
               if (_expanded) ...[
                 const SizedBox(height: 16),
-                const Divider(),
+                Divider(color: Theme.of(context).colorScheme.secondary),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Состав заказа:',
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.secondary
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -136,33 +148,71 @@ class _OrderCardState extends State<OrderCard> {
                     children: [
                       Text(
                         '${item.product.name} (x${item.quantity})',
-                        style: const TextStyle(fontSize: 14),
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.secondary),
                       ),
                       Text(
                         '${(item.product.price * item.quantity).toStringAsFixed(2)} ₽',
-                        style: const TextStyle(fontSize: 14),
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.secondary),
                       ),
                     ],
                   ),
                 )).toList(),
                 const SizedBox(height: 8),
-                const Divider(),
+                Divider(color: Theme.of(context).colorScheme.secondary),
+                Text(
+                  'Адрес доставки:',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.secondary
+                  ),
+                ),
+                Text(
+                  widget.order.shippingAddress,
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.secondary
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Способ оплаты:',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.secondary
+                  ),
+                ),
+                Text(
+                  _getPaymentMethodText(widget.order.paymentMethod),
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.secondary
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Divider(color: Theme.of(context).colorScheme.secondary),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Итого:',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.secondary
                       ),
                     ),
                     Text(
                       '${widget.order.total.toStringAsFixed(2)} ₽',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.deepPurple,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
                   ],
@@ -208,89 +258,16 @@ class _OrderCardState extends State<OrderCard> {
         return status;
     }
   }
-}
-
-// Модель заказа
-class Order {
-  final String id;
-  final String userId; // Добавляем поле user
-  final List<OrderItem> items;
-  final double total;
-  final String status;
-  final String shippingAddress;
-  final String paymentMethod;
-  final DateTime createdAt;
-
-  Order({
-    required this.id,
-    required this.userId,
-    required this.items,
-    required this.total,
-    required this.status,
-    required this.shippingAddress,
-    required this.paymentMethod,
-    required this.createdAt,
-  });
-
-  factory Order.fromJson(Map<String, dynamic> json) {
-    return Order(
-      id: json['_id'] ?? '',
-      userId: json['user']?.toString() ?? '', // Преобразуем ObjectId в строку
-      items: (json['items'] as List? ?? [])
-          .map((item) => OrderItem.fromJson(item))
-          .toList(),
-      total: (json['total'] ?? 0).toDouble(),
-      status: json['status'] ?? 'pending',
-      shippingAddress: json['shippingAddress'] ?? '',
-      paymentMethod: json['paymentMethod'] ?? '',
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
-    );
-  }
-}
-
-// Модель товара в заказе
-class OrderItem {
-  final String productId; // Изменяем с Product на productId
-  final int quantity;
-  final double price;
-  final Product product; // Добавляем поле для полной информации о продукте
-
-  OrderItem({
-    required this.productId,
-    required this.quantity,
-    required this.price,
-    required this.product, // Инициализируем в fromJson
-  });
-
-  factory OrderItem.fromJson(Map<String, dynamic> json) {
-    return OrderItem(
-      productId: json['product']?.toString() ?? '', // ObjectId как строка
-      quantity: json['quantity'] ?? 0,
-      price: (json['price'] ?? 0).toDouble(),
-      product: Product.fromJson(json['productDetails'] ?? {}), // Дополнительные данные о продукте
-    );
-  }
-}
-
-// Модель продукта
-class Product {
-  final String id;
-  final String name;
-  final double price;
-
-  Product({
-    required this.id,
-    required this.name,
-    required this.price,
-  });
-
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      id: json['_id'] ?? '',
-      name: json['name'] ?? 'Неизвестный продукт',
-      price: (json['price'] ?? 0).toDouble(),
-    );
+  String _getPaymentMethodText(String method) {
+    switch (method) {
+      case 'card':
+        return 'Карта';
+      case 'cash':
+        return 'Наличные';
+      case 'SberPay':
+        return 'SberPay';
+      default:
+        return method;
+    }
   }
 }
