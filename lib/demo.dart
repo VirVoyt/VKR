@@ -1,13 +1,15 @@
 library app_demo;
-import 'dart:math';
 
-import 'package:projectvkr/main.dart';
-import 'package:graphql_flutter/graphql_flutter.dart';
-import 'package:get/get.dart';
-import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'main.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-part 'data.dart';
-part 'logic.dart';
 part 'api.dart';
+part 'OrdersPage.dart';
+part 'loginScreen.dart';
+part 'registerScreen.dart';
+part 'companiesCart.dart';
+part 'models.dart';
+part 'theme.dart';

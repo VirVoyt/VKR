@@ -2,9 +2,9 @@ const Company = require('../models/Company');
 
 // Создание компании
 exports.createCompany = async (req, res) => {
-  const { name, contactEmail, contactPhone, address, website } = req.body;
+  const { name, contactEmail, contactPhone, address, website , description } = req.body;
   try {
-    const company = new Company({ name, contactEmail, contactPhone, address, website, createdBy: req.userId });
+    const company = new Company({ name, contactEmail, contactPhone, address, website, description });
     await company.save();
     res.status(201).json(company);
   } catch (err) {
@@ -15,9 +15,10 @@ exports.createCompany = async (req, res) => {
 // Получение всех компаний
 exports.getCompanies = async (req, res) => {
   try {
-    const companies = await Company.find({ createdBy: req.userId });
+    const companies = await Company.find({});
     res.json(companies);
   } catch (err) {
+    console.error('Error fetching companies:', err);
     res.status(400).json({ error: err.message });
   }
 };
