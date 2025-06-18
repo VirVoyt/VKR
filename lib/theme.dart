@@ -6,8 +6,8 @@ class AppTheme {
         primary: Colors.white , // Основной цвет
         secondary: Colors.black, // Акцентный
       onSecondary: Colors.black,
-        surface: Color(0xffece9e9),//вторичный
-        onPrimary: Color(0xffece9e9),
+        surface: Color(0xffacacac),//вторичный
+        onPrimary: Color(0xffacacac),
       tertiary: Colors.deepPurple,
     ),
     scaffoldBackgroundColor: Color(0xFFF4F4FB),

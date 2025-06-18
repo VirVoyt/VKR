@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'demo.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 
 late Future<List<Companies>> futureCompanies;
@@ -37,8 +36,6 @@ class _MyAppState extends State<MyApp> {
         switch (settings.name) {
           case '/':
             return MaterialPageRoute(builder: (context) => LoginScreen());
-          case '/register':
-            return MaterialPageRoute(builder: (context) => RegisterScreen());
           case '/app':
             final token = settings.arguments as String; // Получаем токен
             return MaterialPageRoute(
@@ -68,7 +65,6 @@ class _ShopPageState extends State<ShopPage> {
 
   int currentPageIndex = 0;
 
-  late GoogleMapController mapController;
 
   TextEditingController _addressController = TextEditingController();
   String _selectedPaymentMethod = 'card';
@@ -190,42 +186,49 @@ class _ShopPageState extends State<ShopPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.primary,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: SizedBox(
+        height: 90, // Фиксированная высота
+        child: NavigationBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          indicatorColor: Theme.of(context).colorScheme.tertiary,
+          height: 70, // Указываем высоту NavigationBar
+          labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected, // Скрываем все labels
 
-        backgroundColor: Theme.of(context).colorScheme.surface, // цвет навигатора
-        indicatorColor: Theme.of(context).colorScheme.tertiary, // цвет выбранного элемента
-        onDestinationSelected: (int index) {
-          setState(() {
-            currentPageIndex = index;
-          });
-        },
-        selectedIndex: currentPageIndex,
-        destinations: <Widget>[
-          NavigationDestination(
-            selectedIcon: Icon(Icons.home, color: Theme.of(context).colorScheme.secondary),
-            icon: Icon(Icons.home_outlined, color: Theme.of(context).colorScheme.secondary),
-            label: '',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.delivery_dining_rounded, color: Theme.of(context).colorScheme.secondary),
-            label: '',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.location_on, color: Theme.of(context).colorScheme.secondary),
-            label: '',
-          ),
-          NavigationDestination(
-            icon: Badge(
-              label: Text(cartItems.length.toString()),
-              child: Icon(Icons.shopping_cart, color: Theme.of(context).colorScheme.secondary),
+          destinations: <Widget>[
+            NavigationDestination(
+              selectedIcon: Icon(Icons.home, size: 30, color: Theme.of(context).colorScheme.secondary),
+              icon: Icon(Icons.home_outlined, size: 30, color: Theme.of(context).colorScheme.secondary),
+              label: '',
             ),
-            label: '',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_circle, color: Theme.of(context).colorScheme.secondary),
-            label: '',
-          ),
-        ],
+            NavigationDestination(
+              icon: Icon(Icons.delivery_dining_rounded, size: 30, color: Theme.of(context).colorScheme.secondary),
+              label: '',
+            ),
+            NavigationDestination(
+              icon: Badge(
+                label: Text(cartItems.length.toString()),
+                child: Icon(Icons.shopping_cart, size: 30, color: Theme.of(context).colorScheme.secondary),
+              ),
+              label: '',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.account_circle, size: 30, color: Theme.of(context).colorScheme.secondary),
+              label: '',
+            ),
+          ].map((destination) {
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 12), // Вертикальный отступ для выравнивания
+              child: destination,
+            );
+          }).toList(),
+
+          onDestinationSelected: (int index) {
+            setState(() {
+              currentPageIndex = index;
+            });
+          },
+          selectedIndex: currentPageIndex,
+        ),
       ),
       body: <Widget>[
 
@@ -291,17 +294,6 @@ class _ShopPageState extends State<ShopPage> {
         ),
         /// Orders page
         OrdersPage(token: widget.token),
-
-        /// map page
-        GoogleMap(
-          onMapCreated: (GoogleMapController controller) {
-            mapController = controller;
-          },
-          initialCameraPosition: const CameraPosition(
-            target: LatLng(37.7749, -122.4194), // Координаты (замените на нужные)
-            zoom: 10,
-          ),
-        ),
 
         ///shopping cart page
         cartItems.isEmpty
