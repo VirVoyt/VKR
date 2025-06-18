@@ -1,5 +1,4 @@
 //страница с входа
-//страница с входа
 part of 'demo.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,9 +11,27 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _rememberMe = false;
 
   final FocusNode _emailFocusNode = FocusNode();
   final FocusNode _passwordFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final loginData = await AuthService.loadLoginData();
+    if (loginData['rememberMe'] == true) {
+      setState(() {
+        _emailController.text = loginData['username'] ?? '';
+        _passwordController.text = loginData['password'] ?? '';
+        _rememberMe = true;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -31,7 +48,6 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Theme.of(context).colorScheme.primary,
       body: GestureDetector(
         onTap: () {
-          // Убираем фокус при тапе вне полей ввода
           FocusScope.of(context).unfocus();
         },
         child: Container(
@@ -52,11 +68,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 alignment: const Alignment(0, 0),
                 child: SingleChildScrollView(
                   child: Container(
+                    width:  MediaQuery.sizeOf(context).width -  MediaQuery.sizeOf(context).width/4,
                     padding: EdgeInsets.all(30),
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: Theme.of(context).colorScheme.onSecondary,
-                        width: 2,
+                        width: 3,
                       ),
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -118,7 +135,27 @@ class _LoginScreenState extends State<LoginScreen> {
                             onSubmitted: (_) => _login(),
                           ),
                         ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 5),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Checkbox(
+                              value: _rememberMe,
+                              onChanged: (value) {
+                                setState(() {
+                                  _rememberMe = value!;
+                                });
+                              },
+                            ),
+                            Text(
+                              "Запомнить меня",
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
                         SizedBox(
                           width: MediaQuery.of(context).size.width / 2,
                           height: 50,
@@ -149,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    FocusScope.of(context).unfocus(); // Убираем фокус перед аутентификацией
+    FocusScope.of(context).unfocus();
 
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -163,6 +200,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final token = await apiService.login(email, password);
+
+      if (_rememberMe) {
+        await AuthService.saveLoginData(email, password);
+      } else {
+        await AuthService.clearLoginData();
+      }
+
       Navigator.pushNamed(
         context,
         '/app',

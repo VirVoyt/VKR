@@ -51,6 +51,7 @@ class _OrdersPageState extends State<OrdersPage> {
 class OrderCard extends StatefulWidget {
   final Order order;
 
+
   const OrderCard({super.key, required this.order});
 
   @override
@@ -58,7 +59,159 @@ class OrderCard extends StatefulWidget {
 }
 
 class _OrderCardState extends State<OrderCard> {
+
   bool _expanded = false;
+  Future<void> _generateAndSavePdf() async {
+    // 1. Создаем PDF документ
+    final pdf = pw.Document();
+    final font = await PdfGoogleFonts.robotoRegular();
+
+    // 2. Добавляем страницу
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return _buildPdfContent(context, font); // Ваш метод для содержимого
+        },
+      ),
+    );
+
+    // 3. Сохраняем PDF в файл
+    final output = await getTemporaryDirectory();
+    final file = File('${output.path}/invoice_${widget.order.id}.pdf');
+    await file.writeAsBytes(await pdf.save());
+
+    // 4. Открываем PDF (или предлагаем печать)
+    await OpenFile.open(file.path);
+
+    // Альтернатива: сразу печатать
+    // await Printing.layoutPdf(
+    //   onLayout: (PdfPageFormat format) async => pdf.save(),
+    // );
+  }
+
+  pw.Widget _buildPdfContent(pw.Context context, font) {
+    final order = widget.order;
+    final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
+    return pw.Column(
+
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        // Заголовок
+        pw.Header(
+          level: 0,
+          child: pw.Text('Накладная №${order.id.substring(0, 8)}',
+          style: pw.TextStyle(font: font)),
+        ),
+        pw.SizedBox(height: 15),
+
+        pw.Text('Дата: ${dateFormat.format(order.createdAt)}', style: pw.TextStyle(font: font)),
+        pw.SizedBox(height: 20),
+
+        // Информация о доставке
+        pw.Text('Адрес доставки: ${order.shippingAddress}', style: pw.TextStyle(font: font)),
+        pw.Text('Способ оплаты: ${_getPaymentMethodText(order.paymentMethod)}', style: pw.TextStyle(font: font)),
+        pw.SizedBox(height: 30),
+
+        // Таблица товаров
+        pw.TableHelper.fromTextArray(
+          context: context,
+          border: null,
+          cellAlignment: pw.Alignment.centerLeft,
+          headerDecoration: pw.BoxDecoration(
+            borderRadius: pw.BorderRadius.circular(2), // Используйте BorderRadius.circular
+            color: PdfColors.grey300, // Также исправлена опечатка в greg300 -> grey300
+          ),
+          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, font: font),
+          headers: ['№', 'Наименование', 'Кол-во', 'Цена', 'Сумма'],
+          data: order.items.asMap().entries.map((entry) {
+            final index = entry.key;
+            final item = entry.value;
+            return [
+              pw.Center(child:
+              pw.Text(
+                '${index + 1}',
+                style: pw.TextStyle(
+                  font: font, // Ваш шрифт
+                  fontSize: 10,
+                ),
+              ),),
+            pw.Center(child:
+              pw.Text(
+                item.product.name,
+                style: pw.TextStyle(
+                  font: font,
+                  fontSize: 10,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),),
+              pw.Center(child:
+              pw.Text(
+                '${item.quantity}',
+                style: pw.TextStyle(
+                  font: font,
+                  fontSize: 10,
+                ),
+              ),),
+                pw.Center(child:
+              pw.Text(
+                '${item.price.toStringAsFixed(2)} ₽',
+                style: pw.TextStyle(
+                  font: font,
+                  fontSize: 10,
+                ),
+              ),),
+            pw.Center(child:
+              pw.Text(
+                '${(item.price * item.quantity).toStringAsFixed(2)} ₽',
+                style: pw.TextStyle(
+                  font: font,
+                  fontSize: 10,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),),
+            ];
+          }).toList(),
+        ),
+        pw.SizedBox(height: 30),
+
+        // Итого
+        pw.Align(
+          alignment: pw.Alignment.centerRight,
+          child: pw.Text(
+            'Итого: ${order.total.toStringAsFixed(2)} ₽',
+            style: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 16,
+              font: font
+            ),
+          ),
+        ),
+
+        // Подпись
+        pw.SizedBox(height: 50),
+        pw.Align(
+          alignment: pw.Alignment.centerRight,
+          child: pw.Column(
+            children: [
+              pw.Text('_________________________', style: pw.TextStyle(font: font)),
+              pw.Text('Подпись исполнителя', style: pw.TextStyle(font: font)),
+            ],
+          ),
+        ),
+        pw.SizedBox(height: 50),
+        pw.Align(
+          alignment: pw.Alignment.centerRight,
+          child: pw.Column(
+            children: [
+              pw.Text('_________________________', style: pw.TextStyle(font: font)),
+              pw.Text('Подпись заказчика', style: pw.TextStyle(font: font)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,6 +246,11 @@ class _OrderCardState extends State<OrderCard> {
                         color: Theme.of(context).colorScheme.secondary
                     ),
                   ),
+                      IconButton(
+                        icon: Icon(Icons.picture_as_pdf),
+                        onPressed: _generateAndSavePdf,
+                        tooltip: 'Скачать накладную',
+                      ),
                   Container(
                     decoration: BoxDecoration(
                       color: _getStatusColor(widget.order.status),

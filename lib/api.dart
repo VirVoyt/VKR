@@ -1,7 +1,7 @@
 part of 'demo.dart';
 
 class ApiService {
-  final String baseUrl = 'http://localhost:5000/api';
+  final String baseUrl = 'http://10.0.2.2:5000/api';
 
   Future<Map<String, dynamic>> register(String username, String email, String password) async {
     final response = await http.post(

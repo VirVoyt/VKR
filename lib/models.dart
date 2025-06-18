@@ -107,7 +107,7 @@ class Products {
 // Модель заказа
 class Order {
   final String id;
-  final String userId; // Добавляем поле user
+  final String userId;
   final List<OrderItem> items;
   final double total;
   final String status;
